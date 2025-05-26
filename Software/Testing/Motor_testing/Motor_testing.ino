@@ -1,7 +1,7 @@
-#define MOT_TOP_LEFT 18
-#define MOT_TOP_RIGHT 13
-#define MOT_BOTTOM_LEFT 28
-#define MOT_BOTTOM_RIGHT 1
+#define MOT_TOP_LEFT 20
+#define MOT_TOP_RIGHT 28
+#define MOT_BOTTOM_LEFT 5
+#define MOT_BOTTOM_RIGHT 11
 void setup() {
   // put your setup code here, to run once:
   analogWriteFreq(500); // PWM frequency 500 Hz

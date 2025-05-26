@@ -4,10 +4,12 @@
 
 #define I2C_CLK_FREQ 400000 // 400kHz
 const u_int8_t IMUAddress = 0x68;  // Address for MPU6050 IMU sensor
+#define SDA_PIN 0 // GPIO pin for SDA
+#define SCL_PIN 1 // GPIO pin for SCL
 
 #ifndef APSSID
-#define APSSID "PicoW"
-#define APPSW "password"
+#define APSSID "PicoDrone" // name of your PicoW Hotspot
+#define APPSW "picodrone"
 #endif
 #define UDP_PKT_MAX_SIZE 16
 
@@ -16,10 +18,10 @@ char packetBuffer[UDP_PKT_MAX_SIZE + 1];
 
 WiFiUDP Udp;  // Object for WiFi UDP class
 
-#define MOT_TOP_LEFT 18
-#define MOT_TOP_RIGHT 13
-#define MOT_BOTTOM_LEFT 28
-#define MOT_BOTTOM_RIGHT 1
+#define MOT_TOP_LEFT 20
+#define MOT_TOP_RIGHT 28
+#define MOT_BOTTOM_LEFT 5
+#define MOT_BOTTOM_RIGHT 11
 #define sensitivity 2
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -80,8 +82,11 @@ void setup(){
 
   Serial.begin(115200);
   gyro_address = IMUAddress;      
-  Wire.setClock(I2C_CLK_FREQ);   
+  Wire.setClock(I2C_CLK_FREQ);
+  Wire.setSDA(SDA_PIN);
+  Wire.setSCL(SCL_PIN);
   Wire.begin();                                                             //Start the I2C as master.
+Serial.write("Gyro Wire.begin");
 
   pinMode(MOT_TOP_LEFT, OUTPUT);
   pinMode(MOT_TOP_RIGHT, OUTPUT);
@@ -95,7 +100,7 @@ void setup(){
   
   //Use the led on the Arduino for startup indication.
   digitalWrite(LED_BUILTIN,HIGH);                                                    //Turn on the warning led.
-
+Serial.write("Gyro Calibration BEGIN");
   set_gyro_registers();                                                     //Set the specific gyro registers.
 
   //Let's take multiple gyro data samples so we can determine the average gyro offset (calibration).
@@ -112,7 +117,7 @@ void setup(){
   gyro_axis_cal[1] /= 2000;                                                 //Divide the roll total by 2000.
   gyro_axis_cal[2] /= 2000;                                                 //Divide the pitch total by 2000.
   gyro_axis_cal[3] /= 2000;                                                 //Divide the yaw total by 2000.                                                //Set PCINT3 (digital input 11)to trigger an interrupt on state change.
-
+Serial.write("Gyro Calibration done");
   WiFi.mode(WIFI_AP);
   WiFi.begin(APSSID, APPSW);
   while(WiFi.status() != WL_CONNECTED) {
@@ -138,6 +143,7 @@ void setup(){
       receiver_input_channel_2 = atoi(ch2); // PITCH
       receiver_input_channel_3 = atoi(ch3); // THROTTLE
       receiver_input_channel_4 = atoi(ch4); // YAW
+      Serial.printf("Yaw = %d, Throttle = %d, Roll = %d, Pitch = %d\n", receiver_input_channel_4, receiver_input_channel_3, receiver_input_channel_1, receiver_input_channel_2);
     }
     start ++;
     delay(3);                                                               //Wait 3 milliseconds before the next loop.
@@ -147,7 +153,7 @@ void setup(){
     }
   }
   start = 0;                                                                //Set start back to 0.
-
+  Serial.write("START!!!!!!!!!!!!!!!!");
   //Load the battery voltage to the battery_voltage variable.
   //65 is the voltage compensation for the diode.
   //12.6V equals ~5V @ Analog 0.
@@ -188,13 +194,12 @@ void loop(){
   gyro_pitch_input = (gyro_pitch_input * 0.7) + ((gyro_pitch / 65.5) * 0.3);//Gyro pid input is deg/sec.
   gyro_yaw_input = (gyro_yaw_input * 0.7) + ((gyro_yaw / 65.5) * 0.3);      //Gyro pid input is deg/sec.
 
-//  Serial.print(gyro_roll_input);
-//  Serial.print(", ");
-//  Serial.print(gyro_pitch_input);
-//  Serial.print(", ");
-//  Serial.print(gyro_yaw_input);
-//  Serial.println();
-//  
+  // Serial.print(gyro_roll_input);
+  // Serial.print(", ");
+  // Serial.print(gyro_pitch_input);
+  // Serial.print(", ");
+  // Serial.print(gyro_yaw_input);
+  // Serial.println();
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////
   //This is the added IMU code from the videos:
@@ -236,12 +241,16 @@ void loop(){
     roll_level_adjust = 0;                                                  //Set the roll angle correcion to zero.
   }
 
-
+  
   //For starting the motors: throttle low and yaw left (step 1).
-  if(receiver_input_channel_3 < 1050 && receiver_input_channel_4 < 1050)start = 1;
+  if(receiver_input_channel_3 < 1050 && receiver_input_channel_4 < 1050){
+    start = 1;
+    Serial.println("START 1!");
+  }
   //When yaw stick is back in the center position start the motors (step 2).
   if(start == 1 && receiver_input_channel_3 < 1050 && receiver_input_channel_4 > 1450){
     start = 2;
+    Serial.println("START 2!");
 
     angle_pitch = angle_pitch_acc;                                          //Set the gyro pitch angle equal to the accelerometer pitch angle when the quadcopter is started.
     angle_roll = angle_roll_acc;                                            //Set the gyro roll angle equal to the accelerometer roll angle when the quadcopter is started.
@@ -297,6 +306,7 @@ void loop(){
 
   //Turn on the led if battery voltage is to low.
   //if(battery_voltage < 1000 && battery_voltage > 600)digitalWrite(12, HIGH);
+
 
 
   throttle = receiver_input_channel_3;                                      //We need the throttle signal as a base signal.

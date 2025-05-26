@@ -20,6 +20,8 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT); // set the built in LED pin as Output
   Serial.begin(115200);
   Wire.setClock(I2C_CLK_FREQ);  // setting I2C communication frequency to 400kHz
+  Wire.setSDA(0);
+  Wire.setSCL(1);
   Wire.begin(); // starting I2C communication over SDA0 and SCL0 pins
   
   Wire.beginTransmission(IMUAddress);

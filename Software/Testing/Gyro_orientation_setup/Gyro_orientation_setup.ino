@@ -110,6 +110,8 @@ void setup() {
   // put your setup code here, to run once:
   pinMode(LED_BUILTIN, OUTPUT);
   Wire.setClock(I2C_CLK_FREQ);
+  //Wire.setSDA(0);
+  //Wire.setSCL(1);
   Wire.begin();
   Serial.begin(115200);
   gyro_address = 0x68;
